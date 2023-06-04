@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    service: app
+  name: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: app
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        default: "true"
+        service: app
+    spec:
+      containers:
+        - env:
+          - name: DB_HOST
+            value: db
+          - name: DB_NAME
+            value: tutorial-dev
+          - name: DB_PASS
+            value: password
+          - name: DB_USER
+            value: vinhle
+          image: {{  .Values.app.image  }}
+          name: app
+          command: ["/bin/sh"]
+          args: ["-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:3003"]
+          ports:
+            - containerPort: 3003
+              name: app-port
+          volumeMounts:
+            - mountPath: /app-volume
+              name: app-volume
+      imagePullSecrets:
+        - name: registry-credentials
+      restartPolicy: Always
+      volumes:
+        - name: app-volume
+          persistentVolumeClaim:
+            claimName: app-volume
